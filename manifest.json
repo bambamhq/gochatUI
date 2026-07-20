@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "GO Chat UI — AI Chat for OpenCode Go",
+  "version": "1.3.0",
+  "description": "The missing chat UI for OpenCode Go. Beautiful, simple and local. Unofficial client — bring your own API key.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://opencode.ai/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "GO Chat UI",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "content/float.css",
+        "icons/icon128.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

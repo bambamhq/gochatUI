@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" role="img" aria-label="GO Chat UI logo">
+  <!-- Transparent outside the rounded app icon -->
+  <rect x="8" y="8" width="484" height="484" rx="76" fill="#111214"/>
+
+  <!-- Stylized GO -->
+  <g fill="#fff">
+    <!-- G -->
+    <path d="M88 112H239L207 145H123V296H199V247H154L189 211H239V330H88Z"/>
+    <!-- O -->
+    <path fill-rule="evenodd" d="M261 112H410V330H261ZM296 145V297H375V145Z"/>
+  </g>
+
+  <!-- CHAT UI -->
+  <text x="250" y="425"
+        fill="#fff"
+        text-anchor="middle"
+        font-family="Inter, Helvetica Neue, Arial, sans-serif"
+        font-size="58"
+        font-weight="300"
+        letter-spacing="5">CHAT UI</text>
+</svg>

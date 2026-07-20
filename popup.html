@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GO Chat UI</title>
+  <!-- Must load before the stylesheet so the resolved theme is on <html>
+       before the first paint; see theme-init.js. -->
+  <script src="theme-init.js"></script>
+  <link rel="stylesheet" href="popup.css">
+  <!-- No remote font CDN: keeps the extension's "nothing leaves your machine" claim true.
+       popup.css falls back to the system UI stack (-apple-system / Segoe UI). -->
+</head>
+<body>
+
+  <!-- Welcome / Setup screen -->
+  <div id="setup" class="setup-screen hidden">
+    <div class="setup-card">
+      <img class="setup-icon" src="logo.svg" alt="" width="48" height="48">
+      <h1>GO Chat UI</h1>
+      <p>Connect your OpenCode Go subscription to start chatting with powerful AI models.</p>
+      <div class="setup-input-group">
+        <label for="api-key-input">API Key</label>
+        <div class="input-wrapper">
+          <input type="password" id="api-key-input" placeholder="Enter your OpenCode Go API key">
+          <button id="toggle-key-vis" class="icon-btn" title="Show/hide key">
+            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button id="save-key-btn" class="primary-btn">
+        <span>Connect</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+      <p class="setup-hint">
+        <a href="https://opencode.ai/go" target="_blank">Get an API key</a> &middot; $5 first month, then $10/month
+      </p>
+      <p class="setup-disclaimer">
+        Unofficial client &mdash; not affiliated with or endorsed by OpenCode.
+      </p>
+    </div>
+  </div>
+
+  <!-- Main chat UI -->
+  <div id="app" class="app hidden">
+
+    <!-- Header (also the window drag handle when floating) -->
+    <header class="header" id="app-header">
+      <div class="header-left">
+        <button id="sidebar-toggle" class="icon-btn" title="Chat history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/>
+          </svg>
+        </button>
+                <img class="logo-mark" src="logo.svg" alt="GO Chat UI" width="30" height="30">
+      </div>
+      <div class="header-right">
+        <div class="model-dropdown" id="model-dropdown">
+          <button class="model-dropdown-trigger" id="model-dropdown-trigger">
+            <img class="model-favicon" id="current-model-favicon" alt="" width="16" height="16">
+            <span id="current-model-name">GLM-5.2</span>
+            <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="model-dropdown-menu" id="model-dropdown-menu">
+            <div class="model-dropdown-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="model-search" placeholder="Search models...">
+            </div>
+            <div class="model-dropdown-list" id="model-dropdown-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+        <button id="new-chat-btn" class="icon-btn" title="New chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+        <button id="open-settings" class="icon-btn" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.82.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <span class="win-divider"></span>
+        <button id="win-min" class="win-btn min" title="Minimize">
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button id="win-close" class="win-btn close" title="Close">
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat History Sidebar -->
+    <div id="sidebar" class="sidebar hidden">
+      <div class="sidebar-header">
+        <h3>Chats</h3>
+        <button id="sidebar-close" class="icon-btn" title="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="sidebar-list" id="sidebar-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
+    <!-- Messages area -->
+    <div id="messages" class="messages">
+      <div class="welcome-message" id="welcome-msg">
+                <img class="welcome-icon" src="logo.svg" alt="" width="52" height="52">
+        <h2>How can I help?</h2>
+        <p>Ask me anything &mdash; code, writing, analysis, and more.</p>
+        <div class="sugg-chips">
+          <button class="sugg-chip">Explain a complex concept simply</button>
+          <button class="sugg-chip">Help me debug some code</button>
+          <button class="sugg-chip">Brainstorm ideas with me</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="chat-input"
+          placeholder="Type a message..."
+          rows="1"
+        ></textarea>
+        <button id="send-btn" class="send-btn" title="Send message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <p class="input-hint">
+        <span class="hint-model" id="hint-model"></span>
+      </p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

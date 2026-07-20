@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GO Chat UI — Settings</title>
+  <!-- No remote font CDN: keeps the extension's "nothing leaves your machine" claim true.
+       The style block below falls back to the system UI stack (-apple-system / Segoe UI). -->
+  <!-- Resolves the theme onto <html> before first paint; see theme-init.js. -->
+  <script src="theme-init.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1a2332;
+      --border: rgba(255, 255, 255, 0.06);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --bg-hover: rgba(255, 255, 255, 0.04);
+      --danger: #f87171;
+      --success: #34d399;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      color-scheme: dark;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-primary: #f6f8fc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --border: rgba(15, 23, 42, 0.10);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #64748b;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.18);
+      --bg-hover: rgba(15, 23, 42, 0.04);
+      --danger: #dc2626;
+      --success: #059669;
+    }
+
+    /* These few rules hardcode colours that only work against the dark
+       palette, so they need explicit light counterparts rather than tokens. */
+    :root[data-theme="light"] .btn-primary { color: #ffffff; }
+    :root[data-theme="light"] .btn-primary:hover { background: #0369a1; }
+    :root[data-theme="light"] .btn-danger,
+    :root[data-theme="light"] .status.disconnected { color: #b91c1c; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-large {
+      display: block;
+      margin: 0 auto 16px;
+      border-radius: 18px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+      letter-spacing: 0.3px;
+      outline: none;
+      transition: all var(--transition);
+    }
+
+    .input-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-row input::placeholder {
+      color: var(--text-tertiary);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: normal;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0b0f19;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .btn-primary:hover { background: #7dd3fc; }
+
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: rgba(248, 113, 113, 0.2);
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-left: auto;
+    }
+
+    .status.connected {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--success);
+    }
+
+    .status.disconnected {
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .chats-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+
+    .chat-item:hover { background: var(--bg-hover, rgba(255,255,255,0.04)); }
+
+    .chat-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-item-meta {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    .chat-item-delete {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--transition);
+      opacity: 0;
+    }
+
+    .chat-item:hover .chat-item-delete { opacity: 1; }
+    .chat-item-delete:hover { color: var(--danger); background: rgba(248, 113, 113, 0.1); }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+      z-index: 100;
+      animation: toastIn 0.3s ease;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* A class rather than inline styles from options.js, so the error toast
+       can follow the theme instead of being pinned to a dark-only red. */
+    .toast.error {
+      background: rgba(248, 113, 113, 0.15);
+      border-color: rgba(248, 113, 113, 0.3);
+      color: #fca5a5;
+    }
+
+    :root[data-theme="light"] .toast.error {
+      background: rgba(220, 38, 38, 0.1);
+      border-color: rgba(220, 38, 38, 0.25);
+      color: #b91c1c;
+    }
+
+    /* ── Usage ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 7px 12px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 12.5px;
+      font-weight: 550;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .tab:hover { color: var(--text-primary); }
+    .tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+    :root:not([data-theme="light"]) .tab[aria-selected="true"] { color: #0b0f19; }
+
+    .usage-totals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    .usage-stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-tertiary);
+    }
+
+    .usage-stat-value {
+      font-size: 20px;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    .chart {
+      width: 100%;
+      height: 150px;
+      display: block;
+      overflow: visible;
+    }
+
+    .chart-bar { fill: var(--accent); opacity: 0.85; }
+    .chart-bar:hover { opacity: 1; }
+    .chart-area { fill: var(--accent); opacity: 0.16; }
+    .chart-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+    .chart-axis { stroke: var(--border); stroke-width: 1; }
+
+    .chart-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-tertiary);
+      margin-top: 6px;
+    }
+
+    .model-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      font-size: 13px;
+    }
+
+    .model-row + .model-row { border-top: 1px solid var(--border); }
+    .model-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .model-bar {
+      width: 90px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-tertiary);
+      overflow: hidden;
+      flex: none;
+    }
+
+    .model-bar span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+    .model-tokens {
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      font-size: 12px;
+      min-width: 88px;
+      text-align: right;
+    }
+
+    .usage-note {
+      font-size: 11.5px;
+      color: var(--text-tertiary);
+      line-height: 1.55;
+      margin-top: 14px;
+    }
+
+    /* ── Appearance controls ── */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+    }
+
+    .setting-row + .setting-row { border-top: 1px solid var(--border); }
+
+    .setting-text { flex: 1; min-width: 0; }
+
+    .setting-title { font-size: 13px; font-weight: 500; }
+
+    .setting-desc {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    .select-control {
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Switch. The visually-hidden checkbox keeps it keyboard-focusable and
+       announced correctly; the track and knob are drawn from its state. */
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: none; }
+    .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      transition: background var(--transition), border-color var(--transition);
+      pointer-events: none;
+    }
+
+    .switch-track::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      transition: transform var(--transition), background var(--transition);
+    }
+
+    .switch input:checked + .switch-track {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .switch input:checked + .switch-track::after {
+      transform: translateX(18px);
+      background: #fff;
+    }
+
+    .switch input:focus-visible + .switch-track {
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .badge {
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.15); border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img class="logo-large" src="logo.svg" alt="" width="120" height="120">
+      <p class="subtitle">Made with OpenCode Go using DeepSeek V4 Pro &amp; Kimi K3</p>
+    </header>
+
+    <!-- API Key -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <h2>API Key</h2>
+        <span id="api-status" class="status disconnected">
+          <span class="status-dot"></span> Not connected
+        </span>
+      </div>
+      <div class="section-desc">
+        Enter your OpenCode Go API key from <a href="https://opencode.ai/go" target="_blank" style="color: var(--accent);">opencode.ai/go</a>
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <div class="input-row">
+          <input type="password" id="api-key" placeholder="sk-...">
+          <button id="save-key" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+          <line x1="4" y1="4" x2="9" y2="9"/>
+        </svg>
+        <h2>Default Model</h2>
+      </div>
+      <div class="form-group">
+        <select id="default-model" style="
+          width: 100%;
+          padding: 10px 14px;
+          background: var(--bg-tertiary);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+          color: var(--text-primary);
+          font-size: 13px;
+          font-family: 'Inter', sans-serif;
+          outline: none;
+          cursor: pointer;
+        ">
+          <option value="">Loading models...</option>
+        </select>
+      </div>
+      <button id="save-model" class="btn btn-primary">Save Model Preference</button>
+    </div>
+
+    <!-- Usage -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <h2>Usage</h2>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" id="tab-daily" role="tab" aria-selected="true">Per day</button>
+        <button class="tab" id="tab-cumulative" role="tab" aria-selected="false">Cumulative</button>
+      </div>
+
+      <div class="usage-totals" id="usage-totals"></div>
+
+      <div id="usage-chart-wrap">
+        <svg class="chart" id="usage-chart" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="chart-labels" id="chart-labels"></div>
+      </div>
+
+      <div id="usage-models" style="margin-top: 18px;"></div>
+
+      <div class="usage-note" id="usage-note"></div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <h2>Appearance</h2>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-title">Theme</div>
+          <div class="setting-desc">
+            &ldquo;System&rdquo; follows your operating system and switches automatically.
+          </div>
+        </div>
+        <select id="theme-select" class="select-control">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-title">Show reasoning</div>
+          <div class="setting-desc">
+            Some models think before answering. Off by default: you see a
+            &ldquo;Thinking&rdquo; indicator instead of the full transcript.
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="show-thinking" aria-label="Show reasoning">
+          <span class="switch-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Window -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/>
+        </svg>
+        <h2>Window</h2>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-title">Minimize when you click away</div>
+          <div class="setting-desc">
+            Clicking the page behind the chat shrinks it to the floating chip.
+            Turn this off to keep the window open until you minimize it yourself.
+          </div>
+        </div>
+        <label class="switch">
+          <!-- checked here too: the default is on, so this avoids a flash of
+               "off" in the moment before options.js reads storage. -->
+          <input type="checkbox" id="click-away" checked aria-label="Minimize when you click away">
+          <span class="switch-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Chat History -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <h2>Chat History</h2>
+        <span id="chat-count" class="badge">0</span>
+      </div>
+      <div id="chats-container" class="chats-list">
+        <div class="empty-state">No chat history yet</div>
+      </div>
+      <div style="margin-top: 12px;">
+        <button id="clear-all" class="btn btn-danger" disabled>Clear All History</button>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="section">
+      <div class="section-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <h2>About</h2>
+      </div>
+      <div class="section-desc">
+        <strong>GO Chat UI</strong> v1.3.0<br>
+        A beautiful AI chat interface powered by your OpenCode Go subscription.<br>
+        Your API key and chat history are stored locally in your browser and are never sent anywhere
+        except to OpenCode&rsquo;s API to answer your messages. Model brand icons are loaded from
+        Google&rsquo;s public favicon service.
+      </div>
+      <div style="font-size: 12px; color: var(--text-tertiary);">
+        <a href="https://opencode.ai/go" target="_blank" style="color: var(--accent);">Learn about OpenCode Go</a>
+        &middot; $5 first month, then $10/month
+      </div>
+      <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+        <a href="https://www.bambamhq.com/contact.html?app=gochatui" target="_blank" style="color: var(--accent);">Send feedback</a>
+        &middot;
+        <a href="https://chromewebstore.google.com/detail/go-chat-ui-%E2%80%94-ai-chat-for/edeahmicmaaphonflnfmjfoingkkmgnb/reviews" target="_blank" style="color: var(--accent);">Leave a review</a>
+      </div>
+      <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 10px; line-height: 1.6;">
+        GO Chat UI is an independent, unofficial client. It is not affiliated with,
+        endorsed by, or sponsored by OpenCode. &ldquo;OpenCode&rdquo; is the trademark of its
+        respective owner.
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

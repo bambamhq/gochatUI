@@ -1,0 +1,24 @@
+# Secrets — .env.local holds a live OpenCode API key
+.env
+.env.*
+!.env.example
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+*.swp
+
+# Build output
+store/*.zip
+
+# Local dev artifacts: scratch images kept for the store asset generator.
+# hero.png is used by store/asset-generator.html; the rest are leftovers.
+hero-b64.txt
+setup-check.png
+
+# Internal store tooling and draft listing copy — not for the public repo
+store/
+
+# Local AI-assistant config — never publish
+.claude/
+CLAUDE.md

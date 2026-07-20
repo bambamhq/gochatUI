@@ -1,0 +1,246 @@
+/* OpenCode Go Chat — floating window chrome (shadow-DOM scoped) */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+@property --oc-a {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ── Window ─────────────────────────────────────────────── */
+.oc-win {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(5, 8, 15, 0.92);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  backdrop-filter: blur(26px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 32px 90px -18px rgba(0, 0, 0, 0.8),
+    0 0 60px -16px rgba(56, 189, 248, 0.28);
+  opacity: 1;
+  transform: none;
+  transition:
+    transform 0.26s cubic-bezier(0.3, 1.25, 0.45, 1),
+    opacity 0.18s ease,
+    box-shadow 0.5s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  pointer-events: auto;
+  will-change: transform, opacity;
+}
+
+/* animated conic gradient ring — a slow aurora trace around the edge */
+.oc-win::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--oc-a),
+    rgba(56, 189, 248, 0) 0%,
+    rgba(56, 189, 248, 0.55) 10%,
+    rgba(129, 140, 248, 0.55) 20%,
+    rgba(232, 121, 249, 0.4) 30%,
+    rgba(56, 189, 248, 0) 40%,
+    rgba(56, 189, 248, 0) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: oc-rotate 22s linear infinite;
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 70;
+  transition: opacity 0.4s ease;
+}
+
+@keyframes oc-rotate {
+  to { --oc-a: 360deg; }
+}
+
+/* streaming state — the ring speeds up and the aura ignites */
+.oc-win.oc-live {
+  box-shadow:
+    0 32px 90px -18px rgba(0, 0, 0, 0.8),
+    0 0 72px -8px rgba(56, 189, 248, 0.45);
+}
+
+.oc-win.oc-live::after {
+  animation-duration: 5s;
+  opacity: 1;
+}
+
+.oc-win.oc-dragging,
+.oc-win.oc-resizing { transition: none; }
+
+.oc-win.oc-hidden { display: none !important; }
+
+/* entrance / exit states — applied, reflowed, then removed so the
+   transition animates back to identity */
+.oc-from-hidden { opacity: 0; transform: scale(0.94) translateY(14px); }
+.oc-from-chip   { opacity: 0; transform: scale(0.05); }
+.oc-to-chip     { opacity: 0; transform: scale(0.05); }
+.oc-to-hidden   { opacity: 0; transform: scale(0.95) translateY(8px); }
+
+/* ── Body / iframe ──────────────────────────────────────── */
+.oc-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #05080f;
+}
+
+.oc-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #05080f;
+}
+
+/* transparent overlay that swallows pointer events over the iframe
+   while dragging or resizing */
+.oc-guard {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: none;
+}
+.oc-guard.on { display: block; cursor: grabbing; }
+
+/* ── Resize handles ─────────────────────────────────────── */
+.oc-rz { position: absolute; z-index: 50; touch-action: none; }
+.oc-rz-n  { top: 0;    left: 12px; right: 12px;  height: 6px;  cursor: ns-resize; }
+.oc-rz-s  { bottom: 0; left: 12px; right: 12px;  height: 6px;  cursor: ns-resize; }
+.oc-rz-e  { right: 0;  top: 12px;  bottom: 12px; width: 6px;   cursor: ew-resize; }
+.oc-rz-w  { left: 0;   top: 12px;  bottom: 12px; width: 6px;   cursor: ew-resize; }
+.oc-rz-ne { top: 0;    right: 0; width: 16px; height: 16px; cursor: nesw-resize; }
+.oc-rz-nw { top: 0;    left: 0;  width: 16px; height: 16px; cursor: nwse-resize; }
+.oc-rz-se { bottom: 0; right: 0; width: 16px; height: 16px; cursor: nwse-resize; }
+.oc-rz-sw { bottom: 0; left: 0;  width: 16px; height: 16px; cursor: nesw-resize; }
+
+/* subtle corner grip affordance */
+.oc-grip {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 45;
+  color: rgba(148, 163, 184, 0.35);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+.oc-win:hover .oc-grip { color: rgba(125, 211, 252, 0.65); }
+
+/* ── Chip (minimized state) ─────────────────────────────── */
+.oc-chip {
+  position: fixed;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #16233a 0%, #0a0f1c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 16px 38px -8px rgba(0, 0, 0, 0.65),
+    0 0 24px -4px rgba(56, 189, 248, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.25s ease;
+  animation: oc-chip-glow 3.4s ease-in-out infinite;
+}
+
+/* rotating gradient ring around the chip */
+.oc-chip::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(from var(--oc-a), #38bdf8, #818cf8, #e879f9, #38bdf8);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: oc-rotate 9s linear infinite;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.oc-chip img {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.oc-chip:hover { transform: scale(1.09); }
+.oc-chip.oc-held { cursor: grabbing; transform: scale(1.05); animation: none; }
+.oc-chip.oc-hidden { display: none !important; }
+.oc-chip.oc-pop { animation: oc-chip-pop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes oc-chip-pop {
+  0%   { transform: scale(0.25); opacity: 0; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes oc-chip-glow {
+  0%, 100% {
+    box-shadow:
+      0 16px 38px -8px rgba(0, 0, 0, 0.65),
+      0 0 16px -4px rgba(56, 189, 248, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  }
+  50% {
+    box-shadow:
+      0 16px 38px -8px rgba(0, 0, 0, 0.65),
+      0 0 34px -2px rgba(56, 189, 248, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  }
+}
+
+/* ── Light theme ────────────────────────────────────────────
+   This stylesheet lives in a shadow root, so it cannot see popup.css's
+   :root tokens — the frame is themed by a class that float.js toggles.
+
+   The chip is deliberately left dark: it is a floating action button over
+   arbitrary host pages, and a dark circle reads correctly on both light and
+   dark sites. Theming it would also mean duplicating its glow keyframes,
+   which animate box-shadow and would override any static light values. */
+.oc-win.oc-light {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow:
+    0 32px 90px -18px rgba(15, 23, 42, 0.26),
+    0 0 60px -16px rgba(56, 189, 248, 0.16);
+}
+
+.oc-win.oc-light.oc-live {
+  box-shadow:
+    0 32px 90px -18px rgba(15, 23, 42, 0.3),
+    0 0 72px -8px rgba(56, 189, 248, 0.3);
+}
+
+/* The plate behind the iframe. Without this the window flashes near-black
+   on every open while popup.html loads. */
+.oc-win.oc-light .oc-body,
+.oc-win.oc-light .oc-frame {
+  background: #f6f8fc;
+}
+
+.oc-win.oc-light .oc-grip { color: rgba(71, 85, 105, 0.45); }
+.oc-win.oc-light:hover .oc-grip { color: rgba(2, 132, 199, 0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-win, .oc-chip { transition: none !important; animation: none !important; }
+  .oc-win::after, .oc-chip::before { animation: none !important; }
+}
